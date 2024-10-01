@@ -3,7 +3,7 @@
 import { Canvas, useFrame } from '@react-three/fiber';
 import { ScrollControls, useScroll, Plane } from '@react-three/drei';
 import { Model } from './Model';
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 const NUM_MODELS = 2; // Number of model instances
 const MODEL_LENGTH = 32; // Adjust this to match the length of your model
@@ -11,7 +11,7 @@ const TOTAL_LENGTH = NUM_MODELS * MODEL_LENGTH;
 const SCROLL_SPEED = 0.5; // Adjust this value to slow down the camera (1 is default speed, <1 slows down)
 const FOG_PLANE_Z = MODEL_LENGTH * NUM_MODELS; // Position of the fog plane at the end of the model
 
-function InfiniteScroll() {
+function InfiniteScroll({ mouse }) {
   const modelRefs = useRef([]);
   const scroll = useScroll();
 
@@ -21,7 +21,14 @@ function InfiniteScroll() {
 
     modelRefs.current.forEach((modelRef, index) => {
       if (modelRef) {
+        // Apply parallax effect based on mouse position
+        const parallaxX = mouse.x * 0.7; // Adjust sensitivity of parallax
+        const parallaxY = mouse.y * 0.5;
+
+        // Move the models with the scroll and apply parallax
         modelRef.position.z = ((index * MODEL_LENGTH) - scrollOffset) % TOTAL_LENGTH;
+        modelRef.position.x = parallaxX; // Apply parallax on x-axis
+        modelRef.position.y = parallaxY; // Apply parallax on y-axis
 
         // Reposition the model if it goes out of view to make it seamless
         if (modelRef.position.z < -MODEL_LENGTH) {
@@ -62,6 +69,26 @@ function InfiniteScroll() {
 }
 
 export default function Index() {
+  const [mouse, setMouse] = useState({ x: 0, y: 0 });
+
+  // Capture mouse movement and update state
+  const handleMouseMove = (event) => {
+    setMouse({
+      x: (event.clientX / window.innerWidth) * 2 - 1, // Normalize x to -1 to 1
+      y: (event.clientY / window.innerHeight) * 2 - 1, // Normalize y to -1 to 1
+    });
+  };
+
+  // Add event listener for mouse movement
+  useEffect(() => {
+    window.addEventListener('mousemove', handleMouseMove);
+
+    // Clean up the event listener on unmount
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
+
   return (
     <Canvas
       style={{ background: '#000000', width: '100%', height: '100%' }}
@@ -70,7 +97,7 @@ export default function Index() {
       <ambientLight intensity={0.5} />
       <directionalLight intensity={2} position={[0, 2, 3]} />
       <ScrollControls pages={3} infinite> {/* Adjust the number of pages based on the total length */}
-        <InfiniteScroll /> {/* Render the infinite scrolling models */}
+        <InfiniteScroll mouse={mouse} /> {/* Render the infinite scrolling models with parallax */}
       </ScrollControls>
     </Canvas>
   );
