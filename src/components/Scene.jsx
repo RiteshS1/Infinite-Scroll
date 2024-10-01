@@ -9,17 +9,22 @@ const NUM_MODELS = 5; // Number of model instances
 const MODEL_LENGTH = 30; // Adjust this to match the length of your model
 const TOTAL_LENGTH = NUM_MODELS * MODEL_LENGTH;
 
+// Speed constants
+const SCROLL_SPEED_MULTIPLIER = 0.15; // Adjust this for a faster scroll effect
+const ANIMATION_SPEED_MULTIPLIER = 0.5; // Keep it at 0.5 for smoother animations
+
 function InfiniteScroll() {
   const modelRefs = useRef([]);
   const scroll = useScroll();
 
   useFrame(() => {
-    // Reverse the scroll direction by subtracting scroll.offset from TOTAL_LENGTH
-    const scrollOffset = (1 - scroll.offset) * TOTAL_LENGTH;
+    // Calculate the scroll offset for forward movement
+    const scrollOffset = scroll.offset * TOTAL_LENGTH * SCROLL_SPEED_MULTIPLIER;
 
     modelRefs.current.forEach((modelRef, index) => {
       if (modelRef) {
-        modelRef.position.z = ((index * MODEL_LENGTH) - scrollOffset) % TOTAL_LENGTH;
+        // Update the position of the models with forward movement
+        modelRef.position.z = (index * MODEL_LENGTH + scrollOffset) % TOTAL_LENGTH;
 
         // Reposition the model if it goes out of view to make it seamless
         if (modelRef.position.z < -MODEL_LENGTH) {
@@ -29,6 +34,11 @@ function InfiniteScroll() {
         }
       }
     });
+
+    // Reset scroll position when the scroll reaches the bottom
+    if (scroll.offset >= 1) {
+      window.scrollTo(0, 0); // Reset scroll position to the top
+    }
   });
 
   return (
